@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>班チェック Sync-Lite</title>
+
+    <meta name="theme-color" content="#007aff">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <style>
+        :root { --bg-color: #f2f2f7; --card-bg: #ffffff; --primary: #007aff; --sync-color: #ffcc00; --danger: #ff3b30; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg-color); margin: 0; padding-bottom: 120px; -webkit-user-select: none; }
+        
+        .header { position: sticky; top: 0; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); padding: 8px 12px; border-bottom: 1px solid #d1d1d6; z-index: 100; }
+        .progress-info { display: flex; justify-content: space-between; align-items: flex-end; font-size: 0.85em; font-weight: bold; margin-bottom: 4px; }
+        .progress-container { background: #e5e5ea; border-radius: 3px; height: 4px; margin-bottom: 5px; }
+        .progress-bar { background: #34c759; height: 100%; width: 0%; border-radius: 3px; transition: 0.5s; }
+        
+        .filter-bar { display: flex; align-items: center; justify-content: space-between; font-size: 0.85em; font-weight: bold; }
+        .container { padding: 8px; }
+        
+        .class-section { background: var(--card-bg); border-radius: 10px; margin-bottom: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .class-header { background: #f8f8f8; padding: 8px 12px; font-size: 0.9em; font-weight: bold; }
+        .group-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; padding: 10px; }
+
+        .group-btn {
+            height: 48px; background: white; border-radius: 8px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border: 2px solid #d1d1d6; box-sizing: border-box; position: relative;
+        }
+        .group-btn.synced { border: 3px solid var(--sync-color) !important; box-shadow: 0 0 5px rgba(255,204,0,0.5); }
+        .group-btn .num { font-size: 1.1em; font-weight: bold; }
+        .group-btn .label { font-size: 0.55em; margin-top: 2px; }
+
+        .status-1 { background: #007aff; color: white; border-color: #007aff; }
+        .status-2 { background: #ff3b30; color: white; border-color: #ff3b30; }
+        .status-3 { background: #ff9500; color: white; border-color: #ff9500; }
+        .status-4 { background: #34c759; color: white; border-color: #34c759; }
+
+        .panel { margin-top: 15px; padding: 15px; background: #e5e5ea; border-radius: 12px; font-size: 0.85em; }
+        textarea { width: 100%; height: 60px; margin: 8px 0; border-radius: 5px; border: 1px solid #ccc; font-size: 0.8em; padding: 5px; box-sizing: border-box; }
+        .btn-row { display: flex; gap: 8px; margin-bottom: 10px; }
+        button { flex: 1; padding: 10px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; }
+        
+        .btn-toggle { background: #fff; color: #333; border: 1px solid #ccc; }
+        .btn-toggle.active { background: #333 !important; color: #fff !important; border: 1px solid #333 !important; }
+        .btn-toggle.pending { border: 3px solid var(--primary) !important; box-shadow: 0 0 8px rgba(0,122,255,0.4); }
+
+        .btn-export { background: #5856d6; color: white; }
+        .btn-import { background: #34c759; color: white; }
+        .btn-save { background: var(--primary); color: white; flex: 2; }
+        .btn-reset { background: var(--danger); color: white; flex: 1; font-size: 0.85em; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="progress-info">
+        <span>📸 班チェック Sync-Lite</span>
+        <span id="counterText">0 / 0</span>
+    </div>
+    <div class="progress-container"><div id="progressBar" class="progress-bar"></div></div>
+    <div class="filter-bar">
+        <label><input type="checkbox" id="filterUnshot" onchange="renderGrid()"> 未撮影のみ表示</label>
+    </div>
+</div>
+
+<div id="app" class="container"></div>
+
+<div class="container">
+    <div class="panel" style="background: #ddd;">
+        <h3>🛠 基本設定</h3>
+        <label>クラス数</label><input type="number" id="classNum" value="8" style="width:100%; padding:8px; margin-bottom:12px; box-sizing: border-box;">
+        <label>班数</label><input type="number" id="groupNum" value="10" style="width:100%; padding:8px; margin-bottom:12px; box-sizing: border-box;">
+        <label>表示タイプ</label>
+        <div class="btn-row">
+            <button id="typeNum" class="btn-toggle" onclick="setType('num')">1, 2, 3...</button>
+            <button id="typeAlpha" class="btn-toggle" onclick="setType('alpha')">A, B, C...</button>
+        </div>
+        <label>状態名（カンマ区切り）</label>
+        <input type="text" id="statusNames" value="未,撮影済,要確認,不要" style="width:100%; padding:8px; box-sizing: border-box;">
+        <div class="btn-row">
+            <button class="btn-save" onclick="updateConfigOnly()">設定を保存</button>
+            <button class="btn-reset" onclick="resetAllData()">全リセット</button>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h3>🔗 進捗を同期（合算）する</h3>
+        <textarea id="syncData" placeholder="ここに届いたデータを貼り付け"></textarea>
+        <div class="btn-row">
+            <button class="btn-export" onclick="exportData()">進捗をコピー</button>
+            <button class="btn-import" onclick="importData()">読み込む</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let pendingGroupType = 'num';
+    let state = { config: { classNum: 8, groupNum: 10, groupType: 'num', statusNames: "未,撮影済,要確認,不要" }, data: {}, peerData: {} };
+
+    window.onload = () => {
+        const saved = localStorage.getItem('sync_lite_pwa_vFinal');
+        if (saved) {
+            state = JSON.parse(saved);
+            document.getElementById('classNum').value = state.config.classNum;
+            document.getElementById('groupNum').value = state.config.groupNum;
+            document.getElementById('statusNames').value = state.config.statusNames;
+            pendingGroupType = state.config.groupType || 'num';
+        }
+        updateToggleUI();
+        renderGrid();
+    };
+
+    function setType(type) { pendingGroupType = type; updateToggleUI(); }
+
+    function updateToggleUI() {
+        const btnNum = document.getElementById('typeNum');
+        const btnAlpha = document.getElementById('typeAlpha');
+        btnNum.className = btnAlpha.className = 'btn-toggle';
+        if (state.config.groupType === 'num') btnNum.classList.add('active');
+        if (state.config.groupType === 'alpha') btnAlpha.classList.add('active');
+        if (pendingGroupType === 'num') btnNum.classList.add('pending');
+        if (pendingGroupType === 'alpha') btnAlpha.classList.add('pending');
+    }
+
+    function updateConfigOnly() {
+        state.config.classNum = parseInt(document.getElementById('classNum').value);
+        state.config.groupNum = parseInt(document.getElementById('groupNum').value);
+        state.config.statusNames = document.getElementById('statusNames').value;
+        state.config.groupType = pendingGroupType; 
+        updateToggleUI(); renderGrid(); save(); alert("設定を保存しました。");
+    }
+
+    function resetAllData() {
+        if(!confirm("チェックをすべてリセットしますか？")) return;
+        state.data = {}; state.peerData = {}; updateConfigOnly();
+    }
+
+    function renderGrid() {
+        const container = document.getElementById('app');
+        const filterOn = document.getElementById('filterUnshot').checked;
+        const statusList = state.config.statusNames.split(',');
+        container.innerHTML = '';
+        let total = state.config.classNum * state.config.groupNum;
+        let completed = 0;
+
+        for (let c = 1; c <= state.config.classNum; c++) {
+            const section = document.createElement('div');
+            section.className = 'class-section';
+            section.innerHTML = `<div class="class-header"><span>${c}組</span></div>`;
+            const grid = document.createElement('div');
+            grid.className = 'group-grid';
+            let visibleCount = 0;
+
+            for (let g = 1; g <= state.config.groupNum; g++) {
+                const id = `c${c}g${g}`;
+                const myStatus = state.data[id] || 0;
+                const peerStatus = state.peerData[id] || 0;
+                if (myStatus > 0 || peerStatus > 0) completed++;
+                if (filterOn && (myStatus > 0 || peerStatus > 0)) continue;
+                visibleCount++;
+                let gLabel = (state.config.groupType === 'alpha') ? String.fromCharCode(64 + g) : g;
+                if(g > 26) { // アルファベット26文字超え対応
+                    gLabel = String.fromCharCode(64 + Math.floor((g-1)/26)) + String.fromCharCode(64 + (g-1)%26 + 1);
+                }
+                const btn = document.createElement('div');
+                btn.className = `group-btn status-${myStatus} ${peerStatus > 0 ? 'synced' : ''}`;
+                btn.innerHTML = `<div class="num">${gLabel}</div><div class="label">${statusList[myStatus] || ''}</div>`;
+                btn.onclick = () => toggleStatus(id, statusList.length);
+                grid.appendChild(btn);
+            }
+            if (visibleCount > 0 || !filterOn) { section.appendChild(grid); container.appendChild(section); }
+        }
+        document.getElementById('counterText').innerText = `${completed} / ${total}`;
+        document.getElementById('progressBar').style.width = (completed / total * 100) + '%';
+    }
+
+    function toggleStatus(id, max) { state.data[id] = ((state.data[id] || 0) + 1) % max; renderGrid(); save(); }
+
+    function exportData() {
+        const dataStr = btoa(JSON.stringify(state.data));
+        navigator.clipboard.writeText(dataStr).then(() => alert("進捗をコピーしました！"));
+    }
+
+    function importData() {
+        const input = document.getElementById('syncData').value.trim();
+        if (!input) return;
+        try {
+            const receivedData = JSON.parse(atob(input));
+            for (let id in receivedData) {
+                const currentVal = state.peerData[id] || 0;
+                const newVal = receivedData[id] || 0;
+                if (newVal > currentVal) state.peerData[id] = newVal;
+            }
+            renderGrid(); save(); alert("進捗を合体させました！");
+            document.getElementById('syncData').value = "";
+        } catch (e) { alert("エラー"); }
+    }
+
+    function save() { localStorage.setItem('sync_lite_pwa_vFinal', JSON.stringify(state)); }
+
+    // Service Workerの登録
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js');
+    }
+</script>
+</body>
+</html>
