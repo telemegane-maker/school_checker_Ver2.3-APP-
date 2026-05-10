@@ -15,34 +15,38 @@
         
         .header { position: sticky; top: 0; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); padding: 8px 12px; border-bottom: 1px solid #d1d1d6; z-index: 100; }
         .progress-info { display: flex; justify-content: space-between; align-items: flex-end; font-size: 0.85em; font-weight: bold; margin-bottom: 4px; }
-        .progress-container { background: #e5e5ea; border-radius: 3px; height: 4px; margin-bottom: 5px; }
+        .progress-container { background: #e5e5ea; border-radius: 3px; height: 6px; margin-bottom: 5px; }
         .progress-bar { background: #34c759; height: 100%; width: 0%; border-radius: 3px; transition: 0.5s; }
         
         .filter-bar { display: flex; align-items: center; justify-content: space-between; font-size: 0.85em; font-weight: bold; }
         .container { padding: 8px; }
         
-        .class-section { background: var(--card-bg); border-radius: 10px; margin-bottom: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .class-header { background: #f8f8f8; padding: 8px 12px; font-size: 0.9em; font-weight: bold; }
-        .group-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; padding: 10px; }
+        .class-section { background: var(--card-bg); border-radius: 10px; margin-bottom: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .class-header { background: #f8f8f8; padding: 10px 12px; font-size: 0.95em; font-weight: bold; border-bottom: 1px solid #eee; }
+        .group-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 12px; }
 
         .group-btn {
-            height: 48px; background: white; border-radius: 8px;
+            height: 52px; background: white; border-radius: 8px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             border: 2px solid #d1d1d6; box-sizing: border-box; position: relative;
         }
         .group-btn.synced { border: 3px solid var(--sync-color) !important; box-shadow: 0 0 5px rgba(255,204,0,0.5); }
-        .group-btn .num { font-size: 1.1em; font-weight: bold; }
-        .group-btn .label { font-size: 0.55em; margin-top: 2px; }
+        .group-btn .num { font-size: 1.2em; font-weight: bold; }
+        .group-btn .label { font-size: 0.6em; margin-top: 2px; }
 
         .status-1 { background: #007aff; color: white; border-color: #007aff; }
         .status-2 { background: #ff3b30; color: white; border-color: #ff3b30; }
         .status-3 { background: #ff9500; color: white; border-color: #ff9500; }
         .status-4 { background: #34c759; color: white; border-color: #34c759; }
 
-        .panel { margin-top: 15px; padding: 15px; background: #e5e5ea; border-radius: 12px; font-size: 0.85em; }
-        textarea { width: 100%; height: 60px; margin: 8px 0; border-radius: 5px; border: 1px solid #ccc; font-size: 0.8em; padding: 5px; box-sizing: border-box; }
-        .btn-row { display: flex; gap: 8px; margin-bottom: 10px; }
-        button { flex: 1; padding: 10px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; }
+        .panel { margin-top: 20px; padding: 15px; background: #e5e5ea; border-radius: 12px; font-size: 0.85em; }
+        .panel h3 { margin-top: 0; margin-bottom: 10px; font-size: 1.1em; }
+        .panel p { margin: 5px 0; font-size: 0.9em; color: #444; line-height: 1.4; }
+        .help-text { font-size: 0.8em; color: #666; margin-top: 4px; display: block; }
+        
+        textarea { width: 100%; height: 70px; margin: 10px 0; border-radius: 8px; border: 1px solid #ccc; font-size: 0.8em; padding: 8px; box-sizing: border-box; }
+        .btn-row { display: flex; gap: 10px; margin-bottom: 10px; }
+        button { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; font-size: 0.95em; }
         
         .btn-toggle { background: #fff; color: #333; border: 1px solid #ccc; }
         .btn-toggle.active { background: #333 !important; color: #fff !important; border: 1px solid #333 !important; }
@@ -72,16 +76,20 @@
 <div class="container">
     <div class="panel" style="background: #ddd;">
         <h3>🛠 基本設定</h3>
-        <label>クラス数</label><input type="number" id="classNum" value="8" style="width:100%; padding:8px; margin-bottom:12px; box-sizing: border-box;">
-        <label>班数</label><input type="number" id="groupNum" value="10" style="width:100%; padding:8px; margin-bottom:12px; box-sizing: border-box;">
+        <label>クラス数</label><input type="number" id="classNum" value="8" style="width:100%; padding:10px; margin-bottom:12px; box-sizing: border-box; border-radius:5px; border:1px solid #ccc;">
+        <label>班数</label><input type="number" id="groupNum" value="10" style="width:100%; padding:10px; margin-bottom:12px; box-sizing: border-box; border-radius:5px; border:1px solid #ccc;">
+        
         <label>表示タイプ</label>
         <div class="btn-row">
             <button id="typeNum" class="btn-toggle" onclick="setType('num')">1, 2, 3...</button>
             <button id="typeAlpha" class="btn-toggle" onclick="setType('alpha')">A, B, C...</button>
         </div>
-        <label>状態名（カンマ区切り）</label>
-        <input type="text" id="statusNames" value="未,撮影済,要確認,不要" style="width:100%; padding:8px; box-sizing: border-box;">
-        <div class="btn-row">
+        
+        <label>状態名（色順序）</label>
+        <input type="text" id="statusNames" value="未,撮影済,要確認,不要" style="width:100%; padding:10px; box-sizing: border-box; border-radius:5px; border:1px solid #ccc;">
+        <span class="help-text">※ カンマ（ , ）で区切って入力してください</span>
+
+        <div class="btn-row" style="margin-top:15px;">
             <button class="btn-save" onclick="updateConfigOnly()">設定を保存</button>
             <button class="btn-reset" onclick="resetAllData()">全リセット</button>
         </div>
@@ -89,6 +97,8 @@
 
     <div class="panel">
         <h3>🔗 進捗を同期（合算）する</h3>
+        <p>1. 進捗を送る：【コピー】してメンバーに送信します。</p>
+        <p>2. 進捗を合体：届いた文字を下に貼り付けて【読み込む】を押します。</p>
         <textarea id="syncData" placeholder="ここに届いたデータを貼り付け"></textarea>
         <div class="btn-row">
             <button class="btn-export" onclick="exportData()">進捗をコピー</button>
@@ -135,7 +145,7 @@
     }
 
     function resetAllData() {
-        if(!confirm("チェックをすべてリセットしますか？")) return;
+        if(!confirm("チェックと同期データをすべて削除しますか？")) return;
         state.data = {}; state.peerData = {}; updateConfigOnly();
     }
 
@@ -163,7 +173,7 @@
                 if (filterOn && (myStatus > 0 || peerStatus > 0)) continue;
                 visibleCount++;
                 let gLabel = (state.config.groupType === 'alpha') ? String.fromCharCode(64 + g) : g;
-                if(g > 26) { // アルファベット26文字超え対応
+                if(g > 26) {
                     gLabel = String.fromCharCode(64 + Math.floor((g-1)/26)) + String.fromCharCode(64 + (g-1)%26 + 1);
                 }
                 const btn = document.createElement('div');
@@ -197,12 +207,11 @@
             }
             renderGrid(); save(); alert("進捗を合体させました！");
             document.getElementById('syncData').value = "";
-        } catch (e) { alert("エラー"); }
+        } catch (e) { alert("エラー：正しいデータを貼り付けてください。"); }
     }
 
     function save() { localStorage.setItem('sync_lite_pwa_vFinal', JSON.stringify(state)); }
 
-    // Service Workerの登録
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js');
     }
